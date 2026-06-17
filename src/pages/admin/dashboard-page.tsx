@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Users, Cpu, Wrench, FileText } from "lucide-react"
 import { useNavigate } from "react-router"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 
 const DashboardPage = () => {
   const { data: stats, isLoading } = useDashboard()

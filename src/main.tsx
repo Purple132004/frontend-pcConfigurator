@@ -91,7 +91,14 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={client}>
       <RouterProvider router={router} />
-      <Toaster />
+      <Toaster richColors
+  toastOptions={{
+    classNames: {
+      success: "bg-green-500 text-white border-green-500",
+      error: "bg-red-500 text-black border-red-500",
+    },
+  }}
+/>
     </QueryClientProvider>
   </StrictMode>,
 );

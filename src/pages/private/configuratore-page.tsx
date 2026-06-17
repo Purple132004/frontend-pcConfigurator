@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { useCategories, useCompatibleComponents } from "@/features/components/components.queries"
-import { useBuilds } from "@/features/builds/builds.queries"
 import { BuildsService } from "@/features/builds/builds.service"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -16,7 +15,6 @@ import { componentImages } from "@/assets/components/components-images"
 const ConfiguratorePage = () => {
   const queryClient = useQueryClient()
   const { data: categories, isLoading: loadingCategories } = useCategories()
-  const { data: builds } = useBuilds()
 
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [selectedComponents, setSelectedComponents] = useState<Component[]>([])

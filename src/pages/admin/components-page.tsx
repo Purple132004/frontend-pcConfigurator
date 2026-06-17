@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import type {  ComponentSpecs } from "@/features/components/components.type"
 import {
   Accordion,
   AccordionContent,
@@ -108,27 +109,27 @@ const ComponentsPage = () => {
   }
 
   const onEditSubmit = async (data: EditForm) => {
-    if (!editingComponent) return
-    setEditSaving(true)
-    try {
-      await ComponentsService.update(editingComponent.id, {
-        name: data.name,
-        brand: data.brand,
-        price: data.price,
-        specs: {
-          ...(editingComponent.specs as object),
-          tdp: parseInt(data.tdp),
-        },
-      })
-      await queryClient.invalidateQueries({ queryKey: ["components"] })
-      toast.success("Componente aggiornato!")
-      setEditingComponent(null)
-    } catch {
-      toast.error("Errore durante la modifica")
-    } finally {
-      setEditSaving(false)
-    }
+  if (!editingComponent) return
+  setEditSaving(true)
+  try {
+    await ComponentsService.update(editingComponent.id, {
+      name: data.name,
+      brand: data.brand,
+      price: data.price,
+      specs: {
+        ...(editingComponent.specs as object),
+        tdp: parseInt(data.tdp),
+      } as ComponentSpecs,
+    })
+    await queryClient.invalidateQueries({ queryKey: ["components"] })
+    toast.success("Componente aggiornato!")
+    setEditingComponent(null)
+  } catch {
+    toast.error("Errore durante la modifica")
+  } finally {
+    setEditSaving(false)
   }
+}
 
   const handleDelete = async (id: number) => {
     try {

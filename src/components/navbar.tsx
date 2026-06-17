@@ -1,19 +1,17 @@
 import { useAuthStore } from "@/features/auth/auth.store"
 import { AuthService } from "@/features/auth/auth.service"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Link, useNavigate } from "react-router"
 import { toast } from "sonner"
-import { Cpu, LayoutDashboard, LogOut, User } from "lucide-react"
+import { Cpu,  LogOut } from "lucide-react"
 
 const Navbar = () => {
   const user = useAuthStore((s) => s.user)
