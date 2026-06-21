@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import type {  ComponentSpecs } from "@/features/components/components.type"
+import type { Component, ComponentSpecs } from "@/features/components/components.type"
 import {
   Accordion,
   AccordionContent,
@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Plus, Trash2, Pencil } from "lucide-react"
-import type { Component } from "@/features/components/components.type"
 
 const componentSchema = z.object({
   name: z.string().min(2, "Nome minimo 2 caratteri"),
@@ -43,6 +42,15 @@ const componentSchema = z.object({
   price: z.string().min(1, "Prezzo obbligatorio"),
   category_id: z.string().min(1, "Seleziona una categoria"),
   tdp: z.string().min(1, "TDP obbligatorio"),
+  // Campi specifici per categoria (tutti opzionali a livello di schema,
+  // la validazione vera avviene nel backend in base alla categoria)
+  ram_type: z.string().optional(),
+  ram_slots: z.string().optional(),
+  type: z.string().optional(),
+  capacity: z.string().optional(),
+  length: z.string().optional(),
+  max_gpu_length: z.string().optional(),
+  storage_bays: z.string().optional(),
 })
 
 const editSchema = z.object({
@@ -84,17 +92,47 @@ const ComponentsPage = () => {
     resolver: zodResolver(editSchema),
   })
 
+  // Slug della categoria attualmente selezionata nel form di aggiunta
+  const selectedCategorySlug = categories?.find(
+    (c) => c.id.toString() === selectedCategoryId
+  )?.slug
+
   const onSubmit = async (data: ComponentForm) => {
     setSaving(true)
     try {
+      const specs: Record<string, unknown> = {
+        tdp: parseInt(data.tdp),
+      }
+
+      // Aggiunge i campi specifici in base alla categoria selezionata
+      switch (selectedCategorySlug) {
+        case "cpu":
+          specs.ram_type = data.ram_type
+          specs.ram_slots = parseInt(data.ram_slots ?? "0")
+          break
+        case "ram":
+          specs.type = data.type
+          specs.capacity = parseInt(data.capacity ?? "0")
+          break
+        case "gpu":
+          specs.length = parseInt(data.length ?? "0")
+          break
+        case "case":
+          specs.max_gpu_length = parseInt(data.max_gpu_length ?? "0")
+          specs.storage_bays = parseInt(data.storage_bays ?? "0")
+          break
+        case "storage":
+          specs.type = data.type
+          specs.capacity = parseInt(data.capacity ?? "0")
+          break
+      }
+
       await ComponentsService.create({
         category_id: parseInt(data.category_id),
         name: data.name,
         brand: data.brand,
         price: parseFloat(data.price),
-        specs: {
-          tdp: parseInt(data.tdp),
-        },
+        specs,
         is_active: true,
       })
       await queryClient.invalidateQueries({ queryKey: ["components"] })
@@ -109,27 +147,27 @@ const ComponentsPage = () => {
   }
 
   const onEditSubmit = async (data: EditForm) => {
-  if (!editingComponent) return
-  setEditSaving(true)
-  try {
-    await ComponentsService.update(editingComponent.id, {
-      name: data.name,
-      brand: data.brand,
-      price: data.price,
-      specs: {
-        ...(editingComponent.specs as object),
-        tdp: parseInt(data.tdp),
-      } as ComponentSpecs,
-    })
-    await queryClient.invalidateQueries({ queryKey: ["components"] })
-    toast.success("Componente aggiornato!")
-    setEditingComponent(null)
-  } catch {
-    toast.error("Errore durante la modifica")
-  } finally {
-    setEditSaving(false)
+    if (!editingComponent) return
+    setEditSaving(true)
+    try {
+      await ComponentsService.update(editingComponent.id, {
+        name: data.name,
+        brand: data.brand,
+        price: data.price,
+        specs: {
+          ...(editingComponent.specs as object),
+          tdp: parseInt(data.tdp),
+        } as ComponentSpecs,
+      })
+      await queryClient.invalidateQueries({ queryKey: ["components"] })
+      toast.success("Componente aggiornato!")
+      setEditingComponent(null)
+    } catch {
+      toast.error("Errore durante la modifica")
+    } finally {
+      setEditSaving(false)
+    }
   }
-}
 
   const handleDelete = async (id: number) => {
     try {
@@ -238,6 +276,106 @@ const ComponentsPage = () => {
                           <p className="text-xs text-destructive">{errors.tdp.message}</p>
                         )}
                       </div>
+
+                      {/* CAMPI SPECIFICI — CPU */}
+                      {selectedCategorySlug === "cpu" && (
+                        <>
+                          <div className="flex flex-col gap-1">
+                            <Label>Tipo RAM supportato</Label>
+                            <Select
+                              onValueChange={(val) => {
+                                if (val) setValue("ram_type", val)
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Seleziona tipo RAM" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="DDR4">DDR4</SelectItem>
+                                <SelectItem value="DDR5">DDR5</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <Label>Slot RAM disponibili</Label>
+                            <Input type="number" placeholder="es. 4" {...register("ram_slots")} />
+                          </div>
+                        </>
+                      )}
+
+                      {/* CAMPI SPECIFICI — RAM */}
+                      {selectedCategorySlug === "ram" && (
+                        <>
+                          <div className="flex flex-col gap-1">
+                            <Label>Tipo RAM</Label>
+                            <Select
+                              onValueChange={(val) => {
+                                if (val) setValue("type", val)
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Seleziona tipo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="DDR4">DDR4</SelectItem>
+                                <SelectItem value="DDR5">DDR5</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <Label>Capacità (GB)</Label>
+                            <Input type="number" placeholder="es. 16" {...register("capacity")} />
+                          </div>
+                        </>
+                      )}
+
+                      {/* CAMPI SPECIFICI — GPU */}
+                      {selectedCategorySlug === "gpu" && (
+                        <div className="flex flex-col gap-1">
+                          <Label>Lunghezza (mm)</Label>
+                          <Input type="number" placeholder="es. 285" {...register("length")} />
+                        </div>
+                      )}
+
+                      {/* CAMPI SPECIFICI — CASE */}
+                      {selectedCategorySlug === "case" && (
+                        <>
+                          <div className="flex flex-col gap-1">
+                            <Label>Lunghezza massima GPU (mm)</Label>
+                            <Input type="number" placeholder="es. 360" {...register("max_gpu_length")} />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <Label>Numero bay storage</Label>
+                            <Input type="number" placeholder="es. 4" {...register("storage_bays")} />
+                          </div>
+                        </>
+                      )}
+
+                      {/* CAMPI SPECIFICI — STORAGE */}
+                      {selectedCategorySlug === "storage" && (
+                        <>
+                          <div className="flex flex-col gap-1">
+                            <Label>Tipo</Label>
+                            <Select
+                              onValueChange={(val) => {
+                                if (val) setValue("type", val)
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Seleziona tipo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="SSD">SSD</SelectItem>
+                                <SelectItem value="HDD">HDD</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <Label>Capacità (GB)</Label>
+                            <Input type="number" placeholder="es. 1000" {...register("capacity")} />
+                          </div>
+                        </>
+                      )}
 
                       <Button type="submit" disabled={saving} className="w-full">
                         {saving ? "Salvataggio..." : "Aggiungi Componente"}
